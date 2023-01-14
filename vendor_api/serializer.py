@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Vendor
+from .models import Vendor,RestMenuModel,RestFoodModel,AddTime
 from django.contrib.auth.hashers import make_password
 
 
@@ -7,7 +7,7 @@ from django.contrib.auth.hashers import make_password
 class VendorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vendor
-        fields = ["id","first_name","last_name",'email',"phone_number","password","district","city"]  
+        fields = ["id",'vendor_name','email',"phone_number","password","license"]  
 
         extra_kwargs = {
             'password' : {'write_only' : True}
@@ -15,7 +15,7 @@ class VendorSerializer(serializers.ModelSerializer):
     
     def validate_password(self,value):
         if len(value)<4:
-            raise serializers.ValidationError("Password must be minimum 4 characters")
+            raise serializers.ValidationError("Password must be minimum 4 charecters")
         else:
             return value
     def validate_phone_number(self,value):
@@ -26,14 +26,26 @@ class VendorSerializer(serializers.ModelSerializer):
     def save(self):
         reg = Vendor.objects.create(
             email=self.validated_data['email'],
-            first_name=self.validated_data['first_name'],
-            last_name=self.validated_data['last_name'],
             phone_number=self.validated_data['phone_number'],
             # password=self.validated_data['password'], 
             password = make_password(self.validated_data['password']),
-            district = self.validated_data['district'],
-            city = self.validated_data['city'],
         )
         print(reg)
         
         return reg
+    
+class RestMenuSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RestMenuModel
+        fields = '__all__'
+        
+class RestFoodSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RestFoodModel
+        fields = '__all__'
+        
+
+class AddRestTimeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AddTime
+        fields = '__all__'
