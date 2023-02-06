@@ -19,6 +19,9 @@ urlpatterns = [
      path('Block_food/<int:id>/',views.BlockFoodView.as_view(),name='Block_food'),
      path('update_food/<int:id>/',views.UpdateFood.as_view(),name='update_food'),
      path('food_details/',views.FoodDetails.as_view(),name='food_details'),
+     path('GetAllPaidOrders/',views.GetAllPaidOrders.as_view(),name='GetAllPaidOrders'),
+
+     
 
      
 

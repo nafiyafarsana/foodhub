@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from . models import User
+from . models import User,PaymentModel,Order,OrderItem
 
 
 
@@ -28,6 +28,11 @@ class UserSerializer(serializers.ModelSerializer):
         reg.set_password(password)
         reg.save()
         return reg
+    
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PaymentModel
+        fields = '__all__'
 
 # class FoodChoices(object):
 #     def __init__(self,choices,multiplechoices):
@@ -55,4 +60,13 @@ class UserSerializer(serializers.ModelSerializer):
 #           choices = FOOD_CHOICES
 #     )
     
+class OrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = '__all__'
+        
+class OrderItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderItem
+        fields = '__all__'
         

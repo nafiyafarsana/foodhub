@@ -159,7 +159,8 @@ class UploadMenuAPIView(APIView):
 
 
 class FoodDetailView(APIView):
-    # authentication_classes =[JWTVendorAuthentication]
+    authentication_classes =[JWTVendorAuthentication]
+    permission_classes = [IsAuthenticated]
     
     def post(self,request,id):
         try:
@@ -208,35 +209,21 @@ class AddRestTime(APIView):
             
             
 class UpdateMenu(APIView):
-    # authentication_classes = [JWTVendorAuthentication]
+    authentication_classes = [JWTVendorAuthentication]
     
     def get_queryset(self):
         menu = RestMenuModel.objects.all()
         return menu
     
     def patch(self,request,id):
-        try:
-            auth = get_authorization_header(request).split()
-            print(auth)
-            if auth and len(auth) == 2:
-                token = auth[1].decode('utf-8')
-                print(token)
-                id = decode_access_token(token)
-                print(id)
-                vendor = Vendor.objects.get(pk=id)
-                print(vendor)
-                
+        try:    
             data = request.data
             request.data_mutable = True
-            # vendor =request.user
-            id2 = Vendor.objects.get(email=vendor).id
-            print(id)
-            data['vendor'] = id2
+            vendor =request.user
+            data['vendor'] = vendor
             data.update(request.data)
-            menu = RestMenuModel.objects.get(id=id)
-            print(menu.vendor_name)
-            print(vendor)
-            if menu.vendor==vendor:
+            menu = RestMenuModel.objects.get(vendor_name=id)
+            if menu.vendor_name == vendor:
                 serializer = RestMenuSerializer(menu,data=request.data,partial=True)
                 if serializer.is_valid():
                     serializer.save()
@@ -250,9 +237,9 @@ class UpdateMenu(APIView):
                     'message' : 'You are not allowed for this action'
                 }
                 return Response(response)
-        except:
-            message = {'detail' :'something went wrong'}
-            return Response(message,status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+             raise e
+           
         
     def put(self,request,id):
         try:
@@ -287,27 +274,27 @@ class UpdateMenu(APIView):
             
             
 class GetAllMenu(APIView):
-    def get(self,request):
+    authentication_classes = [JWTVendorAuthentication]
+    def get(self,request,id):
         try:
-            vendor = request.data
+            vendor = request.user
             print('vvvvvvvv')
-            menu = RestMenuModel.objects.filter(vendor=vendor)
+            menu = RestMenuModel.objects.filter(vendor_name=vendor)
             serializer = RestMenuSerializer(menu,many=True)
             print('ffffffffffff')
             print(serializer)
             return Response(serializer.data)
-        except:
-            message = {'detail':'something went wrong'}
-            return Response(message,status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+           raise e
         
 class AddFood(APIView):
-    authentication_classes = [TokenAuthenticationSafe]
+    authentication_classes = [JWTVendorAuthentication]
     def post(self,request):
         try:
             data = request.data
             print(data)
-            
-            data.update(request.data)
+            # request.data_mutable = True
+            # data.update(request.data)
             serializer = RestMenuSerializer(data=data)
             print('sssssss')
             if serializer.is_valid():
@@ -322,13 +309,12 @@ class AddFood(APIView):
             else:
                 print(serializer.errors)
                 return Response(serializer.errors)
-        except:
-            message = {"dtail" : 'something went wrong'}
-            return Response(message,status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+           raise e
         
 class BanFood(APIView):
-    # authentication_classes = [TokenAuthenticationSafe]
-    # permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTVendorAuthentication]
+    permission_classes = [IsAuthenticated]
     
     def patch(self,request,id):
         try:
@@ -354,10 +340,8 @@ class BanFood(APIView):
                     print(serializer.errors)
                     return Response(serializer.errors)
                 
-        except:
-            message = {'detail':'something went wrong'}
-            return Response(message,status.HTTP_400_BAD_REQUEST)    
-        
+        except Exception as e:
+            raise e
 
                 
             

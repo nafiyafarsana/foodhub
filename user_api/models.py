@@ -1,4 +1,5 @@
 from django.db import models
+from vendor_api.models import RestFoodModel
 from django.contrib.auth.models import AbstractBaseUser,BaseUserManager,PermissionsMixin     
 # from django.core.validators import RegexValidator
 
@@ -94,4 +95,55 @@ class UserToken(models.Model):
     token = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     expired_at = models.DateTimeField()
+    
+class PaymentModel(models.Model):
+    username = models.ForeignKey(User,on_delete=models.CASCADE)
+    payment_id = models.CharField(max_length=100,null=True)
+    order_id = models.CharField(max_length=100,null=True,blank=True)
+    order_number = models.CharField(max_length=100,null=True,blank=True)
+    payment_method = models.CharField(max_length=100,null=True,default='Razorpay')
+    amount_paid = models.CharField(max_length=100,default=0)
+    status = models.CharField(max_length=100,default='not_paid')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return str(self.username)
+    
+
+class Order(models.Model):
+    
+    username = models.ForeignKey(User,on_delete=models.SET_NULL,null=True)
+    # payment = models.ForeignKey(PaymentModel,on_delete=models.SET_NULL,blank=True,null=True)
+    # order_number = models.CharField(max_length=20)
+    username = models.CharField(max_length=20)
+    email = models.CharField(max_length=20)
+    phone_number = models.CharField(max_length=20)
+    address = models.CharField(max_length=20)
+    location = models.CharField(max_length=20)
+    order_total = models.FloatField()
+    tax = models.FloatField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    payment_status = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return str(self.username) 
+    
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order,on_delete=models.CASCADE,null=True,blank=True)
+    # payment = models.ForeignKey(PaymentModel,on_delete=models.CASCADE,blank=True,null=True)
+    user = models.ForeignKey(User,on_delete=models.CASCADE)
+    food_item = models.ForeignKey(RestFoodModel,on_delete=models.CASCADE)
+    quantity = models.IntegerField()
+    food_price = models.FloatField()
+    ordered = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return self.food_item.food_name
+    
+    
+    
+    
 

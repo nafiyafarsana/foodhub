@@ -12,16 +12,9 @@ urlpatterns = [
     
     path('restaurant_time/',views.AddRestTime.as_view(),name='restaurant_time'),
     path('update_menu/<int:id>/',views.UpdateMenu.as_view(),name='update_menu'),
-    path('get_menu/',views.GetAllMenu.as_view(),name='get_menu'),
+    path('get_menu/<int:id>',views.GetAllMenu.as_view(),name='get_menu'),
     path('Add_food/',views.AddFood.as_view(),name='Add_food'),
     path('Ban_food/<int:id>/',views.BanFood.as_view(),name='Ban_food'),
-
-
-
-
-
-
-
 
 
 ]

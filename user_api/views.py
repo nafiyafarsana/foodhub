@@ -1,3 +1,4 @@
+import requests
 from django.shortcuts import render
 from django.http import JsonResponse
 from rest_framework import status
@@ -5,10 +6,11 @@ from rest_framework.response import Response
 from rest_framework.decorators import APIView
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from rest_framework.filters import SearchFilter,OrderingFilter
-from rest_framework import generics
+from rest_framework.generics import ListAPIView
+from rest_framework.pagination import PageNumberPagination
 
-from . models import User,UserToken
-from . serializers import UserSerializer
+from . models import User,UserToken,Order,OrderItem
+from . serializers import UserSerializer,PaymentSerializer,OrderSerializer,OrderItemSerializer
 from .verify import check,send
 
 from admin_api.models import Category
@@ -26,6 +28,13 @@ import random
 from django.conf import settings
 from django_filters.rest_framework import DjangoFilterBackend
 
+import razorpay
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.datastructures import MultiValueDictKeyError
+from django.db.models import Q
+from .custom import *
+
+from .filters import ItemFilterByPrice
 
 
 # Create your views here.
@@ -110,76 +119,41 @@ class UserLogin(APIView):
             message = {'detail':'somthing went wrong'}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
-# class SendOtp(APIView):
-#     def post(self,request):
-#         account_sid = settings.TWILIO_ACCOUNT_SID
-#         auth_token = settings.TWILIO_AUTH_TOKEN
-#         phone_number = request.data['phone_number']
-#         client = Client(account_sid,auth_token)
-#         otp = generateOTP()
-#         body = 'Your OTP is' + str(otp)
-#         message = client.messages.create(from_='+12069443948',body=body,to=phone_number)
-#         if message.sid:
-#             print('send successfull')
-#             return JsonResponse({'success':True})
-#         else:
-#             print('send fail')
-#             return JsonResponse({'success':False})
-# def generateOTP():
-#     return random.randrange(100000,999999)
-
-# class VerifyUserOtp(APIView):
-#     permission_classes = [AllowAny]
-#     serializer_class = UserSerializer
-#     def post(self,request):
-#         otp = request.data['otp']
-#         phone_numnber = request.data['phone_number']
-#         stored_otp = User.objects.get(phone_numnber=phone_numnber)
-#         if otp == stored_otp:
-#             return JsonResponse({'success':True})
-#         else:
-#             return JsonResponse({'status': False})
-
-
 
 class LoginUserWithOtpAPIView(APIView):
     def post(self, request):
         """ required field : phone_number-10 digit number """
-        try:
-            phone_number = request.data['phone_number']
+    
+        phone_number = request.data['phone_number']
 
-            user = User.objects.filter(phone_number=phone_number,is_active=True)
+        user = User.objects.filter(phone_number=phone_number,is_active=True)
+        print(user)
+        if user is None:
+            response = Response()
             print(user)
-            if user is None:
-                response = Response()
-                print(user)
-                response.data={
-                    'message':'Invalid phone_number'
-                }
-                return response
+            response.data={
+                'message':'Invalid phone_number'
+            }
+            return response
 
-            if user:
-                print('otp sented....')
-                print(user)
-                print(phone_number)
-                send(phone_number)
-                print('-----------')
-                response = Response()
-                print('--------------')
-                response.set_cookie(key='phone_number',value=phone_number,httponly=True)
-                response.data = {
-                'phone_number':phone_number
-                }
-                return response
-            else:
-                response = Response()
-                response.data={
-                    'message':'No user in this phone number'
-                }
-                return response 
-        except:
-            message = {'detail':'somthing went wrong'}
-            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+        if user:
+            print('otp sented....')
+            print(user)
+            print(phone_number)
+            send(phone_number)
+            response = Response()
+            response.set_cookie(key='phone_number',value=phone_number,httponly=True)
+            response.data = {
+            'phone_number':phone_number
+            }
+            return response
+        else:
+            response = Response()
+            response.data={
+                'message':'No user in this phone number'
+            }
+            return response 
+     
 
 class VerifyLoginUserOtp(APIView):
     def post(self,request):
@@ -187,22 +161,18 @@ class VerifyLoginUserOtp(APIView):
         """ required field : code - string"""
         try:
             data=request.data
-            print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
             phone_number=request.COOKIES.get('phone_number')
             print(phone_number)
             code=data['code']
             print(code)
             if check(phone_number,code):
                 user = User.objects.filter(phone_number=phone_number).first()
-                print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
-                print(user)
                 print(user)
                 if user:
-                    print('-------------------------------')
+                   
                     # response.delete_cookie(key='phone_number')
                     access_token = create_access_token(user.id)
                     refresh_token = create_refresh_token(user.id)
-                    print('-------------------------------')
                     UserToken.objects.create(
                         user_id=user.id,
                         token=refresh_token,
@@ -280,23 +250,15 @@ class AllCategories(APIView):
             return Response(message,status.HTTP_400_BAD_REQUEST)
         
 class SelectLocationView(APIView):
-    authentication_classes = [TokenAuthenticationSafe]
-    # permission_classes = [AllowAny]
+    authentication_classes = [JWTUserAuthentication]
+    permission_classes = [AllowAny]
     def patch(self,request,id):
         try:
             data=request.data
             user = request.user
-            print(user)
-            print('lkkjfknfj')
-            user = User.objects.filter(user = user).id
-            print('NNNNNNNNNNNNNNNN')
-            print(user)
             serializer = UpdateUserSerializer(user,data,partial=True)
-            print(serializer)
-            if serializer.is_valid():
-                print('hhhhhhhhhhhh')
+            if serializer.is_valid():   
                 serializer.save()
-                print('bbbbbbbbbb')
                 print('Location updated successfully')
                 response = {
                     'message': 'Location updated successfully',
@@ -308,14 +270,13 @@ class SelectLocationView(APIView):
                 print(serializer.errors)
                 return Response(serializer.error)
             
-        except:
-            message = {'detail':'something went wrong'}
-            return Response(message,status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            raise e
         
         
         
 class AllFoodDetails(APIView):
-    # authentication_classes = [JWTUserAuthentication]
+    authentication_classes = [JWTUserAuthentication]
     
     def get(self,request):
         try:
@@ -333,15 +294,6 @@ class AllFoodDetails(APIView):
             message = {'detail':'something went wrong'}
             return Response(message,status.HTTP_400_BAD_REQUEST)
         
-# class SearchByCategory(generics.ListAPIView):
-    
-#     queryset = RestFoodModel.objects.all()
-#     filter_backends = [DjangoFilterBackend]
-#     serializer_class = RestFoodSerializer
-#     authentication_classes = [JWTUserAuthentication]
-#     permission_classes = [IsAuthenticated]
-#     filter_backends = (SearchFilter,OrderingFilter)
-#     search_fields = ('food_name','food_category','Vendor__location')
 
 class AllFoodCategory(APIView):
     authentication_classes = [JWTUserAuthentication]
@@ -357,13 +309,213 @@ class AllFoodCategory(APIView):
         except:
             message = {'detail':'something went wrong'}
             return Response(message,status.HTTP_400_BAD_REQUEST)
+                
+class SetPagination(PageNumberPagination):
+    page_size = 2
+
+class PagiantionApi(ListAPIView):
+    queryset = RestFoodModel.objects.all()
+    serializer_class = RestFoodSerializer
+    pagination_class = SetPagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = {
+        'vendor_name': ['exact'],
+        'food_name': ['exact'],
+        # 'food_category': ['exact'],
+        # 'food_description': ['exact'],
+        'food_price' : ['exact'],
+        
+    }
+class ItemFilterByPrice(ListAPIView):
+    queryset = RestFoodModel.objects.all()
+    serializer_class = RestFoodSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ItemFilterByPrice
+    
+class SearchFood(APIView):
+    def get(self,request):
+        s = request.GET.get('s')
+        food = RestFoodModel.objects.all()
+        if s:
+            food = RestFoodModel.objects.filter(food_name__icontains=s)
+        serializer = RestFoodSerializer(food,many = True)
+        return Response(serializer.data)
+    
+class OrderItemFilterViewSet(ListAPIView):
+    queryset = OrderItem.objects.all()
+    serializer_class = OrderItemSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['created_at']
+
+class OrderItemApiView(APIView):
+    authentication_classes = [JWTUserAuthentication]
+    serializer_class = OrderSerializer
+    
+    def post(self,request):
+        try:
+            userr=request.user
+            data = request.data
+            request.data_mutable = True
+            id = User.objects.get(username=userr).id
+            print(id)
+            serializer = self.serializer_class(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                
+                response = {
+                    'data' : serializer.data,
+                    
+                }
+                return Response(response)
+            else:
+                return Response(serializer.errors)
+        except Exception as e:
+            raise e
+
+class ViewOrderItem(APIView):
+    authentication_classes = [JWTUserAuthentication]
+    serializer_class = OrderItemSerializer
+    
+    def get(self,request):
+        try:
+            user = request.user
+            data = request.data
+            request.data_mutable = True
+            id = User.objects.get(username=user).id
+            print(id)
+            serializer = self.serializer_class(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                response = {
+                    'data' : serializer.data}
+                return Response(response)
+            else:
+                return Response(serializer.errors)
+        except Exception as e:
+            raise e
+
+class Payment(APIView):
+    authentication_classes = [JWTUserAuthentication]
+    
+    def patch(self,request,id):
+        try:
+            user = request.user
+            data = request.data
+            print(user)
+            print(data)
+            user = User.objects.get(username=user)
+            print(id)
+            order = Order.objects.get(id=id)
+            serializer = PaymentSerializer(order,data)
+            if serializer.is_valid():
+                serializer.save()
+                print(serializer.data)
+                response = {
+                    'message' : 'payment proccessing on razorpay'
+                }
+                return Response(response)
+            else:
+                print(serializer.errors)
+                return Response(serializer.errors)
+        except Exception as e:
+            raise e
+@csrf_exempt      
+def temp_payment(request):
+    amount = 0
+    payment = 0
+    if request.method == 'POST':
+        amount = request.POST.get('amount')
+        id = request.POST['order_number']
+        request.session['key'] = id
+        print(id)
+        print(amount)
+        
+        client =razorpay.Client(auth=(settings.RAZORPAY_PUBLIC_KEY,settings.RAZORPAY__SECRET_KEY))
+        print(client)
+        payment = client.order.create({"amount": int(amount) * 100, 
+                                   "currency": "INR", 
+                                   "payment_capture": "1"})
+        print(payment)
+        order = Order.objects.get(id=id)
+        print(order)
+   
+        print(payment['id'])
+     
+        
+        return render(request,'payments.html',{'payment':payment,'order':order})
+    return render(request,'payments.html')
+
+@csrf_exempt
+def payment_status(request):
+    status = None
+    response = request.POST
+    print(response)
+    params_dict = {
+            'razorpay_order_id':response['razorpay_order_id'],
+            'razorpay_payment_id':response['razorpay_payment_id'],
+            'razorpay_signature':response['razorpay_signature']
+        }
+    print(params_dict)
+    print('response=',response)
+    client = razorpay.Client(auth = (settings.RAZORPAY_PUBLIC_KEY,settings.RAZORPAY__SECRET_KEY))
+    print(client)
+    status = client.utility.verify_payment_signature(params_dict)
+    print(status)
+
+    try:
+        id = request.session['key']
+        user = User.objects.get(id=id)
+        user.payment_id = response['razorpay_payment_id']
+        print(user.payment_id,'payment_id')
+        serializer = PaymentSerializer(user,partial=True)
+        print(serializer)
+        for i in serializer.data:
+           order = Order.objects.get(order_number=i)
+           order.payment_status = True
+           print(order.payment_status)
+           order.save()
+        
+        id = request.session['key']
+        order = Order.objects.get(id=id)
+        
+        order.payment_status = True
+        order.save()
+        
+        
+        
+        return render(request,'success.html',{'status':True})
+    
+    except PaymentError as e:
+         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    except PaymentCancelled as e:
+         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+     
+    except PaymentTimeout as e:
+          return Response({"error": str(e)}, status=status.HTTP_408_REQUEST_TIMEOUT)
+      
+    except SignatureVerificationError as e:
+         return Response({"error": str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+    
+    except OrderNotFoundError as e:
+         return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
+     
+     
+class TrackUserOrders(APIView):
+    authentication_classes = [JWTUserAuthentication]
+    permission_classes = [IsAuthenticated]
+    def get(self,request,id):
+        user_id = request.user
+        print(user_id)
+        orders = OrderItem.objects.filter(user_id=user_id)
+        serializer = OrderItemSerializer(orders,many=True)
+        return Response(serializer.data)
+    
+            
         
 
 
-
-
-            
-            
+          
 
         
         

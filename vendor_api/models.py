@@ -88,8 +88,9 @@ class RestFoodModel(models.Model):
     food_image = models.ImageField(upload_to='pictures/%Y/%m,/%d/',max_length=3000,null=True,blank=True)
     food_category = models.CharField(max_length=3000,null=True,blank=True)
     food_description = models.TextField(max_length=3000,null=True,blank=True)
-    food_prize = models.PositiveIntegerField()
+    food_price = models.PositiveIntegerField()
     slug = models.SlugField(max_length=225,unique=True,null=True)
+    
     
     def __str__(self):
         return self.food_name

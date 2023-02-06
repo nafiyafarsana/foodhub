@@ -21,4 +21,6 @@ urlpatterns = [
     path('vendor_api/',include('vendor_api.urls')),
     path('user_api/',include('user_api.urls')),
     path('admin_api/',include('admin_api.urls')),
+    # path('chatapp/',include('chatapp.urls')),
+
 ]

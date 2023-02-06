@@ -44,11 +44,13 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'django_filters',
+    'channels',
     
     
     'user_api',
     'vendor_api',
     'admin_api',
+    # 'chatapp',
 ]
 
 MIDDLEWARE = [
@@ -59,7 +61,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-     "corsheaders.middleware.CorsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
 ]
 
 ROOT_URLCONF = 'Foodhub.urls'
@@ -76,6 +78,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
+            'autoescape': True,
         },
     },
 ]
@@ -140,6 +143,9 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TASK_SERIALIZER = 'json'
 
 
+RAZORPAY_PUBLIC_KEY=config('RAZORPAY_PUBLIC_KEY')
+RAZORPAY__SECRET_KEY=config('RAZORPAY__SECRET_KEY')
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
@@ -191,3 +197,5 @@ REST_FRAMEWORK = {
     ),
 
 }
+
+ASGI_APPLICATION = "Foodhub.wsgi.application"

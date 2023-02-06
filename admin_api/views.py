@@ -9,8 +9,8 @@ from user_api.authentication import JWTUserAuthentication
 from vendor_api.models import Vendor
 from .serializer import UpdateVendorSerializer,CategorySerializer,AddMenuFoodSerializer
 from vendor_api.serializer import VendorSerializer
-from user_api.serializers import UserSerializer
-from user_api.models import User
+from user_api.serializers import UserSerializer,OrderSerializer
+from user_api.models import User,Order
 from .task import send_menumail_func
 from .models import Menu
 
@@ -227,17 +227,15 @@ class AddFoodView(APIView):
                 food_name = serializer.data['food_name']
                 print(food_name)
                 
-                send_menumail_func.delay()
+                # send_menumail_func.delay()
                 print('jcjnvjfvjfj')
                 return Response(serializer.data)
             else:
                 print(serializer.errors)
                 return Response(serializer.errors)
             
-        except:
-            message = {'detail':'something went wrong'}
-            return Response(message,status.HTTP_400_BAD_REQUEST)
-                
+        except Exception as e:
+            raise e
 
 class BlockFoodView(APIView):
     permission_classes = [IsAdminUser]
@@ -285,9 +283,8 @@ class UpdateFood(APIView):
                 print("Food Updation failed")
                 print(serializer.errors)
                 return Response(serializer.errors)
-        except:
-            message = {'detail':'something went wrong'}
-            return Response(message,status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+           raise e
         
     def delete(self,request,id):
         try:
@@ -295,9 +292,9 @@ class UpdateFood(APIView):
             details = Menu.objects.get(id=id)
             details.delete()
             return Response({'message':'food is removed'})
-        except:
-            message = {'detail':'something went wrong'}
-            return Response(message,status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            raise e
+
         
 class FoodDetails(APIView):
     permission_classes = [IsAdminUser]
@@ -305,15 +302,30 @@ class FoodDetails(APIView):
     def get(self,request):
         try:
             food_name = Menu.objects.all()
-            serializer = AddMenuFoodSerializer(food_name,data=request.data,many=True)
-            return Response(serializer.data)
-        except:
-            message = {'detail':'something went wrong'}
-            return Response(message,status.HTTP_400_BAD_REQUEST)
+            serializer = AddMenuFoodSerializer(food_name,data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            else:
+                print(serializer.errors)
+                return Response(serializer.errors)
+        except Exception as e:
+            raise e
         
 
         
-        
+class GetAllPaidOrders(APIView):
+    permission_classes = [IsAdminUser]
+    authentication_classes = [JWTUserAuthentication]
+    serializer_class = VendorSerializer
+    
+    def get(self,request):
+        try:
+            orders = Order.objects.get(payment_status=True)
+            serializer = OrderSerializer(orders,many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            raise e
 
         
        

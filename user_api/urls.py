@@ -13,6 +13,26 @@ urlpatterns = [
     path('All_food/',views.AllFoodDetails.as_view(),name='All_food'),
     # path('Search/',views.SearchByCategory.as_view(),name='Search'),
     path('All_food_category/',views.AllFoodCategory.as_view(),name='All_food_category'),
+    path('PagiantionApi/',views.PagiantionApi.as_view(),name='PagiantionApi'),\
+    path('ItemFilterByPrice/',views.ItemFilterByPrice.as_view(),name='ItemFilterByPrice'),
+    path('SearchFood/',views.SearchFood.as_view(),name='SearchFood'),
+
+
+
+    path('trackorder/<int:id>/',views.TrackUserOrders.as_view(),name='trackorder'),
+    path('ViewOrderItem/',views.ViewOrderItem.as_view(),name='ViewOrderItem'),
+    path('OrderItem/',views.OrderItemApiView.as_view(),name='OrderItem'),
+    path('OrderItemfilterview/',views.OrderItemFilterViewSet.as_view(),name='OrderItemfilterview'),
+    path('payment/<int:id>/',views.Payment.as_view(),name='payment'),
+    path('temp_payment/',views.temp_payment,name='temp_payment'),
+    path('payment_status/',views.payment_status,name='status'),
+
+
+    
+
+    
+    
+    
 
 
 
