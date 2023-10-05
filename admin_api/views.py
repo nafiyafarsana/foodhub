@@ -61,24 +61,19 @@ class VerifyVendor(APIView):
         try:
             details = Vendor.objects.get(id=id)
             details.is_active = True
-            print(details,'----------------------')
             serializer = UpdateVendorSerializer(details,data=request.data,partial=True)
             print(serializer)
-            print('llll')
             if serializer.is_valid():
-                print('pppppp')
                 serializer.save()
-                print('ooooooo')
+
                 
                 email = details.email
-                print('kkkkkk',email)
                 
                 send_mail('Hello  ',
                   'Congratulations, your Vender application is approved.',
                   'nafiyafarsana944@gmail.com'
                   ,[email] ,  
                    fail_silently=False)
-                print('[[[[[[[')
                 
                 print("VENDOR VERIFIED SUCCESSFULLY")
                 return Response(serializer.data)
@@ -100,15 +95,11 @@ class BlockVendor(APIView):
     def get(self,request,id):
         try:
             vendor = Vendor.objects.get(id=id)
-            print(vendor,'aaaaa')
             if vendor.is_active:
                 vendor.is_active = False
-                print('mmmmm')
             else:
                 vendor.is_active = True
-                print('fffff')
             serializer = UpdateVendorSerializer(vendor,data=request.data,partial=True)
-            print('wwwww')
             if serializer.is_valid():
                 serializer.save()
                 print("Vendor Action Successfull")
@@ -164,15 +155,11 @@ class BlockUser(APIView):
     def get(self,request,id):
         try:
             user = User.objects.get(id=id)
-            print(user,'aaaaa')
             if user.is_active:
                 user.is_active = False
-                print('mmmmm')
             else:
                 user.is_active = True
-                print('fffff')
             serializer = UpdateVendorSerializer(user,data=request.data,partial=True)
-            print('wwwww')
             if serializer.is_valid():
                 serializer.save()
                 print("user Action Successfull")
@@ -198,9 +185,6 @@ class AddcategoryView(APIView):
         try:
             data = request.data
             request.data_mutable = True
-            print('qqqqqqqqqqqqqqq')
-            print('yyyyyyyyyyy')
-            print('eeeeeeeeeeeeeee')
             serializers= CategorySerializer(data=data)
             if serializers.is_valid():
                 serializers.save()
@@ -219,7 +203,6 @@ class AddFoodView(APIView):
     
     def post(self,request):
         try:
-            print('dddddddd')
             serializer = AddMenuFoodSerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save()
@@ -244,9 +227,7 @@ class BlockFoodView(APIView):
     def patch(self,request,id):
         try:
             food_name = Menu.objects.get(id=id)
-            print('food',food_name)
             if food_name.is_active == True:
-                print('xxxxxxxxxxx')
                 food_name.is_active = False
             else:
                 food_name.is_active = True

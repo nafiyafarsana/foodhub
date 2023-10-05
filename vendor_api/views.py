@@ -60,7 +60,7 @@ class VendorLogin(APIView):
                     'message':'Invalid email'
                 }
                 return response
-                print('pppp')
+             
 
           
             storedpassword = str(vendor.password)
@@ -192,8 +192,6 @@ class AddRestTime(APIView):
             serializer = AddRestTimeSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
-                print('--------------')
-                print(serializer)
                 
                 response = {
                     'data' : serializer.data
@@ -253,9 +251,7 @@ class UpdateMenu(APIView):
             print(vendor)
             # print(menu)
             if menu.vendor == vendor:
-                print('sssssssssss')
                 serializer = RestMenuSerializer(menu,data=request.data,partial=True)
-                print('sssssssssssss')
                 if serializer.is_valid():
                     serializer.save()
                     print('Menu update Successfully')
@@ -278,10 +274,8 @@ class GetAllMenu(APIView):
     def get(self,request,id):
         try:
             vendor = request.user
-            print('vvvvvvvv')
             menu = RestMenuModel.objects.filter(vendor_name=vendor)
             serializer = RestMenuSerializer(menu,many=True)
-            print('ffffffffffff')
             print(serializer)
             return Response(serializer.data)
         except Exception as e:
@@ -296,11 +290,8 @@ class AddFood(APIView):
             # request.data_mutable = True
             # data.update(request.data)
             serializer = RestMenuSerializer(data=data)
-            print('sssssss')
             if serializer.is_valid():
-                print('dddddddd')
                 serializer.save()
-                print('gggggg')
                 print(serializer.data)
                 response = {
                     'data' : serializer.data
@@ -320,10 +311,8 @@ class BanFood(APIView):
         try:
             food = RestFoodModel.objects.get(id=id)
             vendor = request.user
-            print('jjjjj')
             print(vendor)
             if vendor == food.vendor:
-                print('ggggg')
                 if food.is_active == True:
                     food.is_active = False
                 else:

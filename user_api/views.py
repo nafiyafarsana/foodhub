@@ -86,14 +86,11 @@ class UserLogin(APIView):
                 }
                 return response
 
-            print('*')
+           
             if user:
-                print('jj',user,user.id)
+                
                 access_token = create_access_token(user.id)
-                print('ll')
-                print(access_token)
                 refresh_token = create_refresh_token(user.id)
-                print('aaaaaa')
                 UserToken.objects.create(
                     user_id=user.id,
                     token=refresh_token,
@@ -162,9 +159,7 @@ class VerifyLoginUserOtp(APIView):
         try:
             data=request.data
             phone_number=request.COOKIES.get('phone_number')
-            print(phone_number)
             code=data['code']
-            print(code)
             if check(phone_number,code):
                 user = User.objects.filter(phone_number=phone_number).first()
                 print(user)
@@ -241,7 +236,6 @@ class AllCategories(APIView):
     def get(self,request):
         try:
             user = request.data
-            print(user)
             category = Category.objects.all()
             serializer = CategorySerializer(category,many=True)
             return Response(serializer.data)
@@ -281,12 +275,8 @@ class AllFoodDetails(APIView):
     def get(self,request):
         try:
             user = request.user
-            print(user)
-            print('sssssssssss')
             food = RestFoodModel.objects.all()
-            print('jjjjjjjj')
             serializer = RestFoodSerializer(food,many=True)
-            print('kkkkkkkkkkk')
             print(serializer)
             return Response(serializer.data)
         
@@ -301,8 +291,6 @@ class AllFoodCategory(APIView):
     def get (self,request):
         try:
             user = request.user
-            print(user)
-            
             category = Category.objects.all()
             serializer = CategorySerializer(category,many=True)
             return Response(serializer.data)
